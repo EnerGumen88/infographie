@@ -2,7 +2,9 @@
 #include "model.h"
 #include <cmath>
 #include <limits> 
-
+#include <cstring>
+#include <stdio.h>
+#include <string>
 
 
 void line (TGAImage &image, int x0, int y0, int x1, int y1, TGAColor color){
@@ -167,22 +169,174 @@ void triangle_z (TGAImage &image,int x0, int y0, int z0, int x1, int y1, int z1,
 }
 
 
+void triangle_d (TGAImage &image,int x0, int y0, int z0, int x1, int y1, int z1, int x2, int y2, int z2, float c0, float c1, float c2, int *zbuffer) {
+  if (y0==y1 && y0==y2)
+		return;
+	if (y0>y1){
+		std::swap(x0,x1);
+		std::swap(y0,y1);
+		std::swap(z0,z1);
+		std::swap(c0,c1);
+	}
 
-int main() {
+	if (y0>y2){
+		std::swap(x0,x2);
+		std::swap(y0,y2);
+		std::swap(z0,z2);
+		std::swap(c0,c2);
+	}
+
+	if (y1>y2){
+		std::swap(x1,x2);
+		std::swap(y1,y2);
+		std::swap(z1,z2);
+		std::swap(c1,c2);
+	}
+
+	int height = y2 - y0;
+	int height1 = y1 - y0;
+	int height2 = y2 - y1;
+	float color = (c2 - c0)/height;
 	
+	
+
+	if (height1 != 0){
+		float color1 = (c1 - c0)/height1;
+		for (int i=0; i<height1; i++){
+			float Ax = x0 + i*(x2-x0)/height;
+			float Az = z0 + i*(z2-z0)/height;
+			float Ac = c0 + i*color;
+			float Bx = x0 + i*(x1-x0)/height1;
+			float Bz = z0 + i*(z1-z0)/height1;
+			float Bc = c0 + i*color1;
+
+			if (Ax > Bx){
+				std::swap(Ax,Bx);
+				std::swap(Az,Bz);
+				std::swap(Ac,Bc);
+				
+			}
+			for (int j=0; j<=Bx-Ax; j++){
+				float z = Az + j*(Bz-Az)/(Bx-Ax); 
+				if (zbuffer[j+(int)Ax+(y0+i)*1000] < z){
+					float color_point = Ac + j*(Bc-Ac)/(Bx-Ax);
+					zbuffer[j+(int)Ax+(y0+i)*1000] = z;
+					image.set(j+Ax,y0+i, TGAColor(color_point*255,color_point*255,color_point*255,255));
+				}
+			}
+		}
+	}
+	
+	if (height2 != 0){
+		float color2 = (c2 - c1)/height2;
+		for (int i=0; i<height2; i++){
+			float Ax = x0 + (i+height1)*(x2-x0)/height;
+			float Az = z0 + (i+height1)*(z2-z0)/height;
+			float Ac = c0 + (i+height1)*color;
+			float Bx = x1 + i*(x2-x1)/height2;
+			float Bz = z1 + i*(z2-z1)/height2;
+			float Bc = c1 + i*color2;
+
+			if (Ax > Bx){
+				std::swap(Ax,Bx);
+				std::swap(Az,Bz);
+				std::swap(Ac,Bc);
+			}
+			for (int j=0; j<=Bx-Ax; j++){
+				float z = Az + j*(Bz-Az)/(Bx-Ax); 
+				if (zbuffer[j+(int)Ax+(y0+i+height1)*1000] < z){
+					float color_point = Ac + j*(Bc-Ac)/(Bx-Ax);
+					zbuffer[j+(int)Ax+(y0+i+height1)*1000] = z;
+					image.set(j+Ax,y0+i+height1, TGAColor(color_point*255,color_point*255,color_point*255,255));
+				}
+			}
+		}
+	}
+  
+}
+
+
+Matrix viewport	(int width, int height, int depth){
+	Matrix vp = Matrix::identity();
+	vp[0][0] = width/2.;
+	vp[1][1] = height/2.;
+	vp[2][2] = depth/2.;
+	vp[0][3] = width/2.;
+	vp[1][3] = height/2.;
+	vp[2][3] = depth/2.;
+
+	return vp;
+}
+
+Matrix projection (float r){
+	Matrix projec = Matrix::identity();
+	projec[2][3] = r;
+
+	return projec;
+}
+
+
+Matrix lookat (Vec3f o, Vec3f camera, Vec3f u){
+	Vec3f z = (camera - o).normalize();
+	Vec3f x = cross(u,z).normalize();
+	Vec3f y = cross(z,x).normalize();
+
+	Matrix modelview = Matrix::identity();
+	for (int i=0;i<3;i++){
+		modelview[0][i] = x[i];
+		modelview[1][i] = y[i];
+		modelview[2][i] = z[i];
+		modelview[i][3] = -o[i];
+	}
+
+	return modelview;
+}
+
+
+void triangle_m (TGAImage &image,Vec4f v0, Vec4f v1, Vec4f v2, TGAColor color){
+  line(image, v0[0], v0[1], v1[0], v1[1], color);
+  line(image, v0[0], v0[1], v2[0], v2[1], color);
+  line(image, v1[0], v1[1], v2[0], v2[1], color);
+}
+
+
+
+
+
+
+int main(int argc, char** argv) {
+	
+	char* cmd;
+
+	if (2==argc) 
+		cmd = argv[1];	
+	
+	 else 
+		cmd = "fil";
+
+
 	int width = 1000;
 	int height = 1000;
 	int depth = 255;
 	TGAImage image (width,height,3);
-	Vec3f light = Vec3f(0,0,-1);
-
+	Vec3f light(0,0,-1);
+	Vec3f origine(0,0,0);
+	Vec3f camera(0,0,1);
+	Vec3f u(0,1,0);
+      
 	Model *model = new Model("./african_head.obj");
+	
 	int *zbuffer = new int [width*height];
 	for (int i=0; i<width*height; i++){
 		zbuffer[i] = std::numeric_limits<int>::min();
 	}
 	
-		  
+	Matrix transfo = Matrix::identity();
+	Matrix vp = viewport(width, height, depth);
+	Matrix projec = projection(1/(camera-origine).norm());
+	Matrix modelview = lookat(origine,camera,u);
+	transfo = vp*projec*modelview;
+	  
 	for (int i=0;i<model->nfaces();i++){
 	  std::vector<int> face = model->face(i);
 	  Vec3f v0 = model->vert(face[0]);
@@ -198,12 +352,53 @@ int main() {
 	  int y2 = (v2.y+1)*(height/2);
 	  int z2 = (v2.z+1)*(depth/2);
 
-	Vec3f normal = (v2-v0)^(v1-v0);
-	normal.normalize();
-	if (normal*light > 0)
-		triangle_z(image,x0,y0,z0,x1,y1,z1,x2,y2,z2,TGAColor(normal*light*255,normal*light*255,normal*light*255,255), zbuffer);
+	if (strcmp(cmd,"fil") == 0) {
+		triangle(image,x0,y0,x1,y1,x2,y2, TGAColor(255,255,255,255));
+	}
+	else if (strcmp(cmd,"z") == 0 || strcmp(cmd,"gouraud") == 0){
+		Vec3f normal = cross((v2-v0),(v1-v0));
+		normal.normalize();
+		if (normal*light > 0){
+			if (strcmp(cmd,"z") == 0){
+				triangle_z(image,x0,y0,z0,x1,y1,z1,x2,y2,z2,TGAColor(normal*light*255,normal*light*255,normal*light*255,255), zbuffer);
+			}
+			else {
+				Vec3f vn0 = model->norm(face[0]).normalize();
+				Vec3f vn1 = model->norm(face[1]).normalize();
+				Vec3f vn2 = model->norm(face[2]).normalize();
+				triangle_d(image,x0,y0,z0,x1,y1,z1,x2,y2,z2,vn0*light,vn1*light,vn2*light, zbuffer);
+			}
+		}
+	}
+	else if (strcmp(cmd,"film") == 0 || strcmp(cmd,"zm") == 0 || strcmp(cmd,"gouraudm") == 0){
 
-	  
+		Vec4f v0 = transfo*(embed<4>(model->vert(face[0])));
+	  	Vec4f v1 = transfo*(embed<4>(model->vert(face[1])));
+	  	Vec4f v2 = transfo*(embed<4>(model->vert(face[2])));
+
+		if (strcmp(cmd,"film") == 0)
+			triangle_m(image,v0, v1, v2, TGAColor(255,255,255,255));
+		else if (strcmp(cmd,"zm") == 0 || strcmp(cmd,"gouraudm") == 0){
+			Vec3f v30(v0[0],v0[1],v0[2]);
+			Vec3f v31(v1[0],v1[1],v1[2]);
+			Vec3f v32(v2[0],v2[1],v2[2]);
+			Vec3f normal = cross((v32-v30),(v31-v30));
+			normal.normalize();
+			if (normal*light > 0){
+				if (strcmp(cmd,"zm") == 0)
+					triangle_z(image,v0[0],v0[1],v0[2],v1[0],v1[1],v1[2],v2[0],v2[1],v2[2],TGAColor(normal*light*255,normal*light*255,normal*light*255,255), zbuffer);
+				else {
+					Vec3f vn0 = model->norm(face[0]).normalize();
+					Vec3f vn1 = model->norm(face[1]).normalize();
+					Vec3f vn2 = model->norm(face[2]).normalize();
+					triangle_d(image,v0[0],v0[1],v0[2],v1[0],v1[1],v1[2],v2[0],v2[1],v2[2],vn0*light,vn1*light,vn2*light, zbuffer);
+				}
+			}
+		}
+
+	}
+		
+	
 	}
 	
 	image.flip_vertically();
