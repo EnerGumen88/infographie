@@ -293,7 +293,16 @@ Matrix lookat (Vec3f o, Vec3f camera, Vec3f u){
 }
 
 
-void triangle_m (TGAImage &image,Vec4f v0, Vec4f v1, Vec4f v2, TGAColor color){
+Matrix viewport2 (int width, int height, int depth){
+	Matrix vp = Matrix::identity();
+	vp[0][0] = width/2.;
+	vp[1][1] = height/2.;
+	vp[2][2] = depth/2.;
+	
+	return vp;
+}
+
+void triangle_m (TGAImage &image,Vec3f v0, Vec3f v1, Vec3f v2, TGAColor color){
   line(image, v0[0], v0[1], v1[0], v1[1], color);
   line(image, v0[0], v0[1], v2[0], v2[1], color);
   line(image, v1[0], v1[1], v2[0], v2[1], color);
@@ -301,12 +310,99 @@ void triangle_m (TGAImage &image,Vec4f v0, Vec4f v1, Vec4f v2, TGAColor color){
 
 
 
+void triangle_t (TGAImage &image,int x0, int y0, int z0, int x1, int y1, int z1, int x2, int y2, int z2, Vec2f t0 , Vec2f t1, Vec2f t2, int *zbuffer, TGAImage &texture ) {
+  if (y0==y1 && y0==y2)
+		return;
+	if (y0>y1){
+		std::swap(x0,x1);
+		std::swap(y0,y1);
+		std::swap(z0,z1);
+		std::swap(t0,t1);
+	}
 
+	if (y0>y2){
+		std::swap(x0,x2);
+		std::swap(y0,y2);
+		std::swap(z0,z2);
+		std::swap(t0,t2);
+	}
 
+	if (y1>y2){
+		std::swap(x1,x2);
+		std::swap(y1,y2);
+		std::swap(z1,z2);
+		std::swap(t1,t2);
+	}
+
+	int height = y2 - y0;
+	int height1 = y1 - y0;
+	int height2 = y2 - y1;
+	//int color = (c2 - c0)/height;
+	Vec2f t20 = t2 - t0;
+	Vec2f t21 = t2 - t1;
+	Vec2f t10 = t1 - t0;
+	
+
+	if (height1 != 0){
+		//float color1 = (c1 - c0)/height1;
+		for (int i=0; i<height1; i++){
+			float Ax = x0 + i*(x2-x0)/height;
+			float Az = z0 + i*(z2-z0)/height;
+			float At = t0[0] + i*(t20[0])/t20[1];
+			float Bx = x0 + i*(x1-x0)/height1;
+			float Bz = z0 + i*(z1-z0)/height1;
+			float Bt = t0[0] + i*(t10[0])/t10[1];
+
+			if (Ax > Bx){
+				std::swap(Ax,Bx);
+				std::swap(Az,Bz);
+				std::swap(At,Bt);
+				
+			}
+			for (int j=0; j<=Bx-Ax; j++){
+				float z = Az + j*(Bz-Az)/(Bx-Ax); 
+				if (zbuffer[j+(int)Ax+(y0+i)*1000] < z){
+					float texture_point = At + j*(Bt-At)/(Bx-Ax);
+					zbuffer[j+(int)Ax+(y0+i)*1000] = z;
+					TGAColor color = texture.get(texture_point,t0[1]+i);
+					image.set(j+Ax,y0+i, color);
+				}
+			}
+		}
+	}
+	
+	if (height2 != 0){
+		//float color2 = (c2 - c1)/height2;
+		for (int i=0; i<height2; i++){
+			float Ax = x0 + (i+height1)*(x2-x0)/height;
+			float Az = z0 + (i+height1)*(z2-z0)/height;
+			float At = t0[0] + (i+height1)*(t20[0])/t20[1];
+			float Bx = x1 + i*(x2-x1)/height2;
+			float Bz = z1 + i*(z2-z1)/height2;
+			float Bt = t1[0] + i*(t21[0])/t21[1];
+
+			if (Ax > Bx){
+				std::swap(Ax,Bx);
+				std::swap(Az,Bz);
+				std::swap(At,Bt);
+			}
+			for (int j=0; j<=Bx-Ax; j++){
+				float z = Az + j*(Bz-Az)/(Bx-Ax); 
+				if (zbuffer[j+(int)Ax+(y0+i+height1)*1000] < z){
+					float texture_point = At + j*(Bt-At)/(Bx-Ax);
+					zbuffer[j+(int)Ax+(y0+i+height1)*1000] = z;
+					TGAColor color = texture.get(texture_point,t0[1]+i+t10[1]);
+					image.set(j+Ax,y0+i+height1, color);
+				}
+			}
+		}
+	}
+  
+}
 
 int main(int argc, char** argv) {
 	
-	char* cmd;
+	const char* cmd;
 
 	if (2==argc) 
 		cmd = argv[1];	
@@ -321,10 +417,13 @@ int main(int argc, char** argv) {
 	TGAImage image (width,height,3);
 	Vec3f light(0,0,-1);
 	Vec3f origine(0,0,0);
-	Vec3f camera(0,0,1);
+	Vec3f camera(1,0,1);
 	Vec3f u(0,1,0);
       
-	Model *model = new Model("./african_head.obj");
+	Model *model = new Model("./obj/diablo.obj");
+	TGAImage texture;
+	texture.read_tga_file("./obj/diablo3_pose_diffuse.tga");
+	texture.flip_vertically();
 	
 	int *zbuffer = new int [width*height];
 	for (int i=0; i<width*height; i++){
@@ -332,16 +431,20 @@ int main(int argc, char** argv) {
 	}
 	
 	Matrix transfo = Matrix::identity();
+Matrix transfo2 = Matrix::identity();
 	Matrix vp = viewport(width, height, depth);
+	Matrix vp2 = viewport2(1024, 1024, depth);
 	Matrix projec = projection(1/(camera-origine).norm());
 	Matrix modelview = lookat(origine,camera,u);
+	light = proj<3>(projec*modelview*embed<4>(light,0.f));
 	transfo = vp*projec*modelview;
+	transfo2 = vp2*projec*modelview;
 	  
 	for (int i=0;i<model->nfaces();i++){
-	  std::vector<int> face = model->face(i);
-	  Vec3f v0 = model->vert(face[0]);
-	  Vec3f v1 = model->vert(face[1]);
-	  Vec3f v2 = model->vert(face[2]);
+	  std::vector<Vec3i> face = model->face(i);
+	  Vec3f v0 = model->vert(face[0][0]);
+	  Vec3f v1 = model->vert(face[1][0]);
+	  Vec3f v2 = model->vert(face[2][0]);
 	  int x0 = (v0.x+1)*(width/2);
 	  int y0 = (v0.y+1)*(height/2);
 	  int z0 = (v0.z+1)*(depth/2);
@@ -363,42 +466,54 @@ int main(int argc, char** argv) {
 				triangle_z(image,x0,y0,z0,x1,y1,z1,x2,y2,z2,TGAColor(normal*light*255,normal*light*255,normal*light*255,255), zbuffer);
 			}
 			else {
-				Vec3f vn0 = model->norm(face[0]).normalize();
-				Vec3f vn1 = model->norm(face[1]).normalize();
-				Vec3f vn2 = model->norm(face[2]).normalize();
+				Vec3f vn0 = model->norm(face[0][2]).normalize();
+				Vec3f vn1 = model->norm(face[1][2]).normalize();
+				Vec3f vn2 = model->norm(face[2][2]).normalize();
 				triangle_d(image,x0,y0,z0,x1,y1,z1,x2,y2,z2,vn0*light,vn1*light,vn2*light, zbuffer);
 			}
 		}
 	}
-	else if (strcmp(cmd,"film") == 0 || strcmp(cmd,"zm") == 0 || strcmp(cmd,"gouraudm") == 0){
-
-		Vec4f v0 = transfo*(embed<4>(model->vert(face[0])));
-	  	Vec4f v1 = transfo*(embed<4>(model->vert(face[1])));
-	  	Vec4f v2 = transfo*(embed<4>(model->vert(face[2])));
+	else if (strcmp(cmd,"film") == 0 || strcmp(cmd,"zm") == 0 || strcmp(cmd,"gouraudm") == 0 || strcmp(cmd,"text") == 0){
+		
+		Vec3f v0 = proj<3>(transfo*(embed<4>(model->vert(face[0][0]))));
+	  	Vec3f v1 = proj<3>(transfo*(embed<4>(model->vert(face[1][0]))));
+	  	Vec3f v2 = proj<3>(transfo*(embed<4>(model->vert(face[2][0]))));
 
 		if (strcmp(cmd,"film") == 0)
 			triangle_m(image,v0, v1, v2, TGAColor(255,255,255,255));
-		else if (strcmp(cmd,"zm") == 0 || strcmp(cmd,"gouraudm") == 0){
-			Vec3f v30(v0[0],v0[1],v0[2]);
-			Vec3f v31(v1[0],v1[1],v1[2]);
-			Vec3f v32(v2[0],v2[1],v2[2]);
-			Vec3f normal = cross((v32-v30),(v31-v30));
+		else {
+			//Vec3f v30(v0[0],v0[1],v0[2]);
+			//Vec3f v31(v1[0],v1[1],v1[2]);
+			//Vec3f v32(v2[0],v2[1],v2[2]);
+			//Vec3f normal = cross((v32-v30),(v31-v30));
+			Vec3f normal = cross((v2-v0),(v1-v0));
 			normal.normalize();
 			if (normal*light > 0){
 				if (strcmp(cmd,"zm") == 0)
 					triangle_z(image,v0[0],v0[1],v0[2],v1[0],v1[1],v1[2],v2[0],v2[1],v2[2],TGAColor(normal*light*255,normal*light*255,normal*light*255,255), zbuffer);
-				else {
-					Vec3f vn0 = model->norm(face[0]).normalize();
-					Vec3f vn1 = model->norm(face[1]).normalize();
-					Vec3f vn2 = model->norm(face[2]).normalize();
+				else if (strcmp(cmd,"gouraudm") == 0) {
+					Vec3f vn0 = model->norm(face[0][2]).normalize();
+					Vec3f vn1 = model->norm(face[1][2]).normalize();
+					Vec3f vn2 = model->norm(face[2][2]).normalize();
 					triangle_d(image,v0[0],v0[1],v0[2],v1[0],v1[1],v1[2],v2[0],v2[1],v2[2],vn0*light,vn1*light,vn2*light, zbuffer);
 				}
+				else if (strcmp(cmd,"text") == 0){
+					Vec2f t0 = model->texture(face[0][1])*1024;
+	  				Vec2f t1 = model->texture(face[1][1])*1024;
+	  				Vec2f t2 = model->texture(face[2][1])*1024;				
+					triangle_t(image,v0[0],v0[1],v0[2],v1[0],v1[1],v1[2],v2[0],v2[1],v2[2],t0,t1,t2,zbuffer,texture);
+					  
+					
+				}
 			}
-		}
 
-	}
+		
+	  
+	  
+		}
 		
 	
+	}
 	}
 	
 	image.flip_vertically();
