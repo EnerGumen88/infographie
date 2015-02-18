@@ -6,7 +6,7 @@
 #include "model.h"
 
 
-Model::Model (const char *filename) : verts_(), faces_(){
+Model::Model (const char *filename) : verts_(), norms_(), faces_(){
   std::ifstream file(filename, std::ios::in);
   
   if (file){
@@ -18,8 +18,14 @@ Model::Model (const char *filename) : verts_(), faces_(){
       if (line.compare(0, 2, "v ") == 0){
 	line_stream >> trash_char;
 	Vec3f v;
-	for (int i=0;i<3;i++) line_stream >> v.raw[i];
+	for (int i=0;i<3;i++) line_stream >> v[i];
 	verts_.push_back(v);
+      }
+      else if (line.compare(0, 2, "vn") == 0){
+	line_stream >> trash_char >> trash_char;
+	Vec3f vn;
+	for (int i=0;i<3;i++) line_stream >> vn[i];
+	norms_.push_back(vn);
       }
       else if (line.compare(0, 1, "f") == 0){
 	std::vector<int> f;
@@ -56,4 +62,8 @@ std::vector<int> Model::face(int idx) {
 
 Vec3f Model::vert(int i) {
  return verts_[i];
+}
+
+Vec3f Model::norm(int i) {
+ return norms_[i];
 }
