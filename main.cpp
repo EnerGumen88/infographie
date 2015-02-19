@@ -6,6 +6,15 @@
 #include <stdio.h>
 #include <string>
 
+int width = 1024;
+int height = 1024;
+int depth = 255;
+Vec3f light(0,0,-1);
+Vec3f origine(0,0,0);
+Vec3f camera(0,0,1);
+Vec3f u(0,1,0);
+
+
 
 void line (TGAImage &image, int x0, int y0, int x1, int y1, TGAColor color){
   
@@ -402,14 +411,9 @@ int main(int argc, char** argv) {
 		cmd = "fil";
 
 
-	int width = 1024;
-	int height = 1024;
-	int depth = 255;
+	
 	TGAImage image (width,height,3);
-	Vec3f light(0,0,-1);
-	Vec3f origine(0,0,0);
-	Vec3f camera(0,0,1);
-	Vec3f u(0,1,0);
+	
       
 	Model *model = new Model("./obj/african_head.obj");
 	TGAImage texture;
