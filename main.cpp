@@ -293,15 +293,6 @@ Matrix lookat (Vec3f o, Vec3f camera, Vec3f u){
 }
 
 
-Matrix viewport2 (int width, int height, int depth){
-	Matrix vp = Matrix::identity();
-	vp[0][0] = width/2.;
-	vp[1][1] = height/2.;
-	vp[2][2] = depth/2.;
-	
-	return vp;
-}
-
 void triangle_m (TGAImage &image,Vec3f v0, Vec3f v1, Vec3f v2, TGAColor color){
   line(image, v0[0], v0[1], v1[0], v1[1], color);
   line(image, v0[0], v0[1], v2[0], v2[1], color);
@@ -411,19 +402,20 @@ int main(int argc, char** argv) {
 		cmd = "fil";
 
 
-	int width = 1000;
-	int height = 1000;
+	int width = 1024;
+	int height = 1024;
 	int depth = 255;
 	TGAImage image (width,height,3);
 	Vec3f light(0,0,-1);
 	Vec3f origine(0,0,0);
-	Vec3f camera(1,0,1);
+	Vec3f camera(0,0,1);
 	Vec3f u(0,1,0);
       
-	Model *model = new Model("./obj/diablo.obj");
+	Model *model = new Model("./obj/african_head.obj");
 	TGAImage texture;
-	texture.read_tga_file("./obj/diablo3_pose_diffuse.tga");
+	texture.read_tga_file("./obj/african_head_diffuse.tga");
 	texture.flip_vertically();
+	
 	
 	int *zbuffer = new int [width*height];
 	for (int i=0; i<width*height; i++){
@@ -431,14 +423,12 @@ int main(int argc, char** argv) {
 	}
 	
 	Matrix transfo = Matrix::identity();
-Matrix transfo2 = Matrix::identity();
 	Matrix vp = viewport(width, height, depth);
-	Matrix vp2 = viewport2(1024, 1024, depth);
 	Matrix projec = projection(1/(camera-origine).norm());
 	Matrix modelview = lookat(origine,camera,u);
 	light = proj<3>(projec*modelview*embed<4>(light,0.f));
 	transfo = vp*projec*modelview;
-	transfo2 = vp2*projec*modelview;
+	
 	  
 	for (int i=0;i<model->nfaces();i++){
 	  std::vector<Vec3i> face = model->face(i);
@@ -482,10 +472,7 @@ Matrix transfo2 = Matrix::identity();
 		if (strcmp(cmd,"film") == 0)
 			triangle_m(image,v0, v1, v2, TGAColor(255,255,255,255));
 		else {
-			//Vec3f v30(v0[0],v0[1],v0[2]);
-			//Vec3f v31(v1[0],v1[1],v1[2]);
-			//Vec3f v32(v2[0],v2[1],v2[2]);
-			//Vec3f normal = cross((v32-v30),(v31-v30));
+			
 			Vec3f normal = cross((v2-v0),(v1-v0));
 			normal.normalize();
 			if (normal*light > 0){
