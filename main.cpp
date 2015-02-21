@@ -9,9 +9,9 @@
 int width = 1024;
 int height = 1024;
 int depth = 255;
-Vec3f light(0,0,1);
+Vec3f light(0,0,-1);
 Vec3f origine(0,0,0);
-Vec3f camera(0,0,-1);
+Vec3f camera(0,0,1);
 Vec3f u(0,1,0);
 
 Matrix vp;
@@ -314,7 +314,7 @@ void triangle_m (TGAImage &image,Vec3f v0, Vec3f v1, Vec3f v2, TGAColor color){
 
 
 
-void triangle_t (TGAImage &image,int x0, int y0, int z0, int x1, int y1, int z1, int x2, int y2, int z2, Vec2f t0 , Vec2f t1, Vec2f t2, int *zbuffer, TGAImage &texture, TGAImage &nm) {
+void triangle_t (TGAImage &image,int x0, int y0, int z0, int x1, int y1, int z1, int x2, int y2, int z2, Vec2f t0 , Vec2f t1, Vec2f t2, int *zbuffer, TGAImage &texture, TGAImage &nm, TGAImage &spec) {
   if (y0==y1 && y0==y2)
 		return;
 	if (y0>y1){
@@ -436,6 +436,9 @@ int main(int argc, char** argv) {
 	TGAImage nm;
 	nm.read_tga_file("./obj/diablo3_pose_nm.tga");
 	nm.flip_vertically();
+	TGAImage spec;
+	nm.read_tga_file("./obj/diablo3_pose_spec.tga");
+	nm.flip_vertically();
 	
 	
 	int *zbuffer = new int [width*height];
@@ -509,7 +512,7 @@ int main(int argc, char** argv) {
 					Vec2f t0 = model->texture(face[0][1])*1024;
 	  				Vec2f t1 = model->texture(face[1][1])*1024;
 	  				Vec2f t2 = model->texture(face[2][1])*1024;				
-					triangle_t(image,v0[0],v0[1],v0[2],v1[0],v1[1],v1[2],v2[0],v2[1],v2[2],t0,t1,t2,zbuffer,texture,nm);
+					triangle_t(image,v0[0],v0[1],v0[2],v1[0],v1[1],v1[2],v2[0],v2[1],v2[2],t0,t1,t2,zbuffer,texture,nm,spec);
 					  
 					
 				}
