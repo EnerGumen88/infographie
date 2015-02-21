@@ -1,3 +1,8 @@
+/** \file tgaimage.h
+ * \brief Functions for tga image
+ * \author Master SOKOLOV
+ */
+
 #ifndef __IMAGE_H__
 #define __IMAGE_H__
 

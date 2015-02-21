@@ -1,3 +1,8 @@
+/** \file tgaimage.cpp
+ * \brief Functions for tga image
+ * \author Master SOKOLOV
+ */
+
 #include <iostream>
 #include <fstream>
 #include <string.h>
@@ -93,7 +98,7 @@ bool TGAImage::read_tga_file(const char *filename) {
 	}
 //	std::cerr << (int)header.datatypecode << "\n";
 //	std::cerr << header.x_origin << "," << header.y_origin << "\n";
-	std::cerr << width << "x" << height << "/" << bytespp*8 << "\n";
+//	std::cerr << width << "x" << height << "/" << bytespp*8 << "\n";
 	in.close();
 	return true;
 }

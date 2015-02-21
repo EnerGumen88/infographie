@@ -1,3 +1,8 @@
+/** \file geometrie.h
+ * Function for vector
+ * \author Master SOKOLOV
+ */
+
 #ifndef __GEOMETRIE_H__
 #define __GEOMETRIE_H__
 #include <cmath>

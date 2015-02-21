@@ -1,3 +1,8 @@
+/** \file model.cpp
+ * \brief Functions for model
+ * \author CARON Frédéric
+ */
+
 #include <iostream>
 #include <string>
 #include <fstream>

@@ -1,3 +1,8 @@
+/** \file main.cpp
+ * \brief Function for draw model
+ * \author CARON Frédéric
+ */
+
 #include "tgaimage.h"
 #include "model.h"
 #include <cmath>
@@ -19,97 +24,128 @@ Matrix projec;
 Matrix modelview;
 
 
-
+/** \fn void line (TGAImage &image, int x0, int y0, int x1, int y1, TGAColor color)
+ * \brief Draw line between (x0,y0) and (x1,y1)
+ *
+ * \param image the image where you draw
+ * \param x0,y0,x1,y1 the coordinates of points
+ * \param color the color of the line
+ * \return void
+ */
 void line (TGAImage &image, int x0, int y0, int x1, int y1, TGAColor color){
   
-  bool steep = false;
-  if (std::abs(x0-x1)<std::abs(y0-y1)) {
-    std::swap(x0, y0);
-    std::swap(x1, y1);
-    steep = true;
-  }
-  if (x0>x1) {
-    std::swap(x0, x1);
-    std::swap(y0, y1);
-  }
-  int dx = x1-x0;
-  int dy = y1-y0;
-  int derrordx = 2*std::abs(dy);
-  int errordx = 0;
-  int y = y0;
-  for (int x=x0; x<=x1; x++) {
-    if (steep) {
-      image.set(y, x, color);
-    } else {
-      image.set(x, y, color);
-    }
-    errordx += derrordx;
-    if (errordx>dx) {
-      y += (y1>y0?1:-1);
-      errordx -= 2*dx;
-    }
-  }
+	bool steep = false;
+	if (std::abs(x0-x1)<std::abs(y0-y1)) {
+		std::swap(x0, y0);
+		std::swap(x1, y1);
+		steep = true;
+	}
+	if (x0>x1) {
+		std::swap(x0, x1);
+		std::swap(y0, y1);
+	}
+	int dx = x1-x0;
+	int dy = y1-y0;
+	int derrordx = 2*std::abs(dy);
+	int errordx = 0;
+	int y = y0;
+	for (int x=x0; x<=x1; x++) {
+		if (steep) {
+			image.set(y, x, color);
+	    	} else {
+	      		image.set(x, y, color);
+	    	}
+	    	errordx += derrordx;
+	    	if (errordx>dx) {
+	    		y += (y1>y0?1:-1);
+	      		errordx -= 2*dx;
+	    	}
+	}
 }
 
-
+/** \fn void triangle_plein (TGAImage &image,int x0, int y0, int x1, int y1, int x2, int y2, TGAColor color)
+ * \brief Draw a triangle fill of color
+ *
+ * \param image the image where you draw
+ * \param x0,y0,x1,y1,x2,y2 the coordinates of vertex
+ * \param color the color of the triangle
+ * \return void
+ */
 void triangle_plein (TGAImage &image,int x0, int y0, int x1, int y1, int x2, int y2, TGAColor color){
  
-  if(x0>x1){
-    std::swap(x0,x1);
-    std::swap(y0,y1);
-  }
-  if(x1>x2){
-    std::swap(x1,x2);
-    std::swap(y1,y2);
-  }
-  if(x0>x1){
-    std::swap(x0,x1);
-    std::swap(y0,y1);
-  }
+  	if(x0>x1){
+    		std::swap(x0,x1);
+    		std::swap(y0,y1);
+  	}
+  	if(x1>x2){
+    		std::swap(x1,x2);
+    		std::swap(y1,y2);
+  	}
+  	if(x0>x1){
+    		std::swap(x0,x1);
+    		std::swap(y0,y1);
+  	}
   
   
-  float dx1 = x1-x0;
-  float dx2 = x2-x0;
-  float dy1 = y1-y0;
-  float dy2 = y2-y0;
-  float dx3 = x2-x1;
-  float dy3 = y2-y1;
-  float y11=y0;
-  float y12=y0;
+  	float dx1 = x1-x0;
+  	float dx2 = x2-x0;
+  	float dy1 = y1-y0;
+  	float dy2 = y2-y0;
+  	float dx3 = x2-x1;
+  	float dy3 = y2-y1;
+  	float y11=y0;
+  	float y12=y0;
   
-  if(dx2==0){
-    line(image, x0, y0, x1, y1, color);
-    line(image, x1, y1, x2, y2, color);
-  }
+  	if(dx2==0){
+		line(image, x0, y0, x1, y1, color);
+		line(image, x1, y1, x2, y2, color);
+  	}
   
-  else {
-    if(dx1!=0){
-      for(int x=x0;x<=x1;x++){
-	y11 += dy1/std::abs(dx1);
-	y12 += dy2/std::abs(dx2);
-	
-	line(image, x, y11,x, y12, color); 
-      }
-    }
+  	else {
+    		if(dx1!=0){
+      			for(int x=x0;x<=x1;x++){
+				y11 += dy1/std::abs(dx1);
+				y12 += dy2/std::abs(dx2);	
+				line(image, x, y11,x, y12, color); 
+      			}
+    		}
      
-    if(dx3!=0){
-      y11 = y1;
-      for (int x=x1;x<=x2;x++){
-	y11 += dy3/std::abs(dx3);
-	y12 += dy2/std::abs(dx2);
-	
-	line(image, x, y11,x, y12, color); 
-      }
-    }
-  }
+    		if(dx3!=0){
+      			y11 = y1;
+      			for (int x=x1;x<=x2;x++){
+				y11 += dy3/std::abs(dx3);
+				y12 += dy2/std::abs(dx2);	
+				line(image, x, y11,x, y12, color); 
+      			}
+    		}
+  	}
 }
 
+
+/** \fn void triangle (TGAImage &image,int x0, int y0, int x1, int y1, int x2, int y2, TGAColor color)
+ * \brief Draw a triangle (juste edges)
+ *
+ * \param image the image where you draw
+ * \param x0,y0,x1,y1,x2,y2 the coordinates of vertex
+ * \param color the color of edges
+ * \return void
+ */
 void triangle (TGAImage &image,int x0, int y0, int x1, int y1, int x2, int y2, TGAColor color){
-  line(image, x0, y0, x1, y1, color);
-  line(image, x0, y0, x2, y2, color);
-  line(image, x1, y1, x2, y2, color);
+  	line(image, x0, y0, x1, y1, color);
+  	line(image, x0, y0, x2, y2, color);
+  	line(image, x1, y1, x2, y2, color);
 }
 
+
+/** \fn void triangle_z (TGAImage &image,int x0, int y0, int z0, int x1, int y1, int z1, int x2, int y2, int z2, TGAColor color, int *zbuffer)
+ * \brief Draw a triangle fill of color and respect z-buffer
+ *
+ * \param image the image where you draw
+ * \param x0,y0,z0,x1,y1,z1,x2,y2,z2 the coordinates of vertex
+ * \param color the color of the triangle
+ * \param zbuffer 
+ * \return void
+ */
 void triangle_z (TGAImage &image,int x0, int y0, int z0, int x1, int y1, int z1, int x2, int y2, int z2, TGAColor color, int *zbuffer){
 	if (y0==y1 && y0==y2)
 		return;
@@ -182,6 +218,15 @@ void triangle_z (TGAImage &image,int x0, int y0, int z0, int x1, int y1, int z1,
 }
 
 
+/** \fn void triangle_d (TGAImage &image,int x0, int y0, int z0, int x1, int y1, int z1, int x2, int y2, int z2, float c0, float c1, float c2, int *zbuffer)
+ * \brief Draw a triangle fill of shaded off color and respect z-buffer
+ *
+ * \param image the image where you draw
+ * \param x0,y0,z0,x1,y1,z1,x2,y2,z2 the coordinates of vertex
+ * \param c0,c1,c2 the coefficients between normal and light of each vertex
+ * \param zbuffer 
+ * \return void
+ */
 void triangle_d (TGAImage &image,int x0, int y0, int z0, int x1, int y1, int z1, int x2, int y2, int z2, float c0, float c1, float c2, int *zbuffer) {
   if (y0==y1 && y0==y2)
 		return;
@@ -269,6 +314,12 @@ void triangle_d (TGAImage &image,int x0, int y0, int z0, int x1, int y1, int z1,
 }
 
 
+/** \fn Matrix viewport	(int width, int height, int depth)
+ * \brief Create matrix viewport
+ *
+ * \param width height and depth of the image
+ * \return Matrix viewport
+ */
 Matrix viewport	(int width, int height, int depth){
 	Matrix vp = Matrix::identity();
 	vp[0][0] = width/2.;
@@ -281,6 +332,13 @@ Matrix viewport	(int width, int height, int depth){
 	return vp;
 }
 
+
+/** \fn Matrix projection (float r)
+ * \brief Create matrix projection
+ *
+ * \param r inverse of distance between camera and origine
+ * \return Matrix projection
+ */
 Matrix projection (float r){
 	Matrix projec = Matrix::identity();
 	projec[2][3] = r;
@@ -289,6 +347,14 @@ Matrix projection (float r){
 }
 
 
+/** \fn Matrix lookat (Vec3f o, Vec3f camera, Vec3f u)
+ * \brief Create matrix lookat
+ *
+ * \param o coordinates of origine
+ * \param camera coordinates of camera
+ * \param u coordinates of u
+ * \return Matrix lookat
+ */
 Matrix lookat (Vec3f o, Vec3f camera, Vec3f u){
 	Vec3f z = (camera - o).normalize();
 	Vec3f x = cross(u,z).normalize();
@@ -306,17 +372,37 @@ Matrix lookat (Vec3f o, Vec3f camera, Vec3f u){
 }
 
 
+/** \fn void triangle_m (TGAImage &image,Vec3f v0, Vec3f v1, Vec3f v2, TGAColor color)
+ * \brief Draw a triangle with Matrix
+ *
+ * \param image the image where you draw
+ * \param v0,v1,v2 coordinates of vertex
+ * \param color the color of the triangle
+ * \return void
+ */
 void triangle_m (TGAImage &image,Vec3f v0, Vec3f v1, Vec3f v2, TGAColor color){
-  line(image, v0[0], v0[1], v1[0], v1[1], color);
-  line(image, v0[0], v0[1], v2[0], v2[1], color);
-  line(image, v1[0], v1[1], v2[0], v2[1], color);
+  	line(image, v0[0], v0[1], v1[0], v1[1], color);
+  	line(image, v0[0], v0[1], v2[0], v2[1], color);
+  	line(image, v1[0], v1[1], v2[0], v2[1], color);
 }
 
 
 
+/** \fn void triangle_t (TGAImage &image,int x0, int y0, int z0, int x1, int y1, int z1, int x2, int y2, int z2, Vec2f t0 , Vec2f t1, Vec2f t2, int *zbuffer, TGAImage &texture, TGAImage &nm, TGAImage &spec)
+ * \brief Draw a triangle with texture (diffuse, normal maps and specular) and respect z-buffer
+ *
+ * \param image the image where you draw
+ * \param x0,y0,z0,x1,y1,z1,x2,y2,z2 the coordinates of vertex
+ * \param t0,t1,t2 the coordinates of each vertex in texture
+ * \param zbuffer 
+ * \param texture image of texture
+ * \param nm image of normal maps
+ * \param spec image of specular
+ * \return void
+ */
 void triangle_t (TGAImage &image,int x0, int y0, int z0, int x1, int y1, int z1, int x2, int y2, int z2, Vec2f t0 , Vec2f t1, Vec2f t2, int *zbuffer, TGAImage &texture, TGAImage &nm, TGAImage &spec) {
-  if (y0==y1 && y0==y2)
-		return;
+  	if (y0==y1 && y0==y2) return;
+	
 	if (y0>y1){
 		std::swap(x0,x1);
 		std::swap(y0,y1);
@@ -415,26 +501,18 @@ void triangle_t (TGAImage &image,int x0, int y0, int z0, int x1, int y1, int z1,
 				}
 			}
 		}
-	}
-
-  
+	}  
 }
 
 int main(int argc, char** argv) {
 	
+	//Get parameter in line command
 	const char* cmd;
+	if (2==argc) cmd = argv[1];	
+	else cmd = "fil";
 
-	if (2==argc) 
-		cmd = argv[1];	
-	
-	 else 
-		cmd = "fil";
-
-
-	
+	//Initilization of images and model
 	TGAImage image (width,height,3);
-	
-      
 	Model *model = new Model("./obj/diablo.obj");
 	TGAImage texture;
 	texture.read_tga_file("./obj/diablo3_pose_diffuse.tga");
@@ -446,97 +524,100 @@ int main(int argc, char** argv) {
 	nm.read_tga_file("./obj/diablo3_pose_spec.tga");
 	nm.flip_vertically();
 	
-	
+	//Initialisation of zbuffer
 	int *zbuffer = new int [width*height];
 	for (int i=0; i<width*height; i++){
 		zbuffer[i] = std::numeric_limits<int>::min();
 	}
 	
-	
+	//Initialization of matrix
 	vp = viewport(width, height, depth);
 	projec = projection(1.f/(camera-origine).norm());
 	modelview = lookat(origine,camera,u);
 	light = proj<3>(projec*modelview*embed<4>(light,0.f)).normalize();
 	
 	
-	  
+	//Let's go  
 	for (int i=0;i<model->nfaces();i++){
-	  std::vector<Vec3i> face = model->face(i);
-	  Vec3f v0 = model->vert(face[0][0]);
-	  Vec3f v1 = model->vert(face[1][0]);
-	  Vec3f v2 = model->vert(face[2][0]);
-	  int x0 = (v0.x+1)*(width/2);
-	  int y0 = (v0.y+1)*(height/2);
-	  int z0 = (v0.z+1)*(depth/2);
-	  int x1 = (v1.x+1)*(width/2);
-	  int y1 = (v1.y+1)*(height/2);
-	  int z1 = (v1.z+1)*(depth/2);
-	  int x2 = (v2.x+1)*(width/2);
-	  int y2 = (v2.y+1)*(height/2);
-	  int z2 = (v2.z+1)*(depth/2);
-
-	if (strcmp(cmd,"fil") == 0) {
-		triangle(image,x0,y0,x1,y1,x2,y2, TGAColor(255,255,255,255));
-	}
-	else if (strcmp(cmd,"z") == 0 || strcmp(cmd,"gouraud") == 0){
-		Vec3f normal = cross((v2-v0),(v1-v0));
-		normal.normalize();
-		if (normal*light > 0){
-			if (strcmp(cmd,"z") == 0){
-				triangle_z(image,x0,y0,z0,x1,y1,z1,x2,y2,z2,TGAColor(normal*light*255,normal*light*255,normal*light*255,255), zbuffer);
-			}
-			else {
-				Vec3f vn0 = model->norm(face[0][2]).normalize();
-				Vec3f vn1 = model->norm(face[1][2]).normalize();
-				Vec3f vn2 = model->norm(face[2][2]).normalize();
-				triangle_d(image,x0,y0,z0,x1,y1,z1,x2,y2,z2,vn0*light,vn1*light,vn2*light, zbuffer);
-			}
-		}
-	}
-	else if (strcmp(cmd,"film") == 0 || strcmp(cmd,"zm") == 0 || strcmp(cmd,"gouraudm") == 0 || strcmp(cmd,"text") == 0){
-		
-		Vec3f v0 = proj<3>(vp*projec*modelview*(embed<4>(model->vert(face[0][0]))));
-	  	Vec3f v1 = proj<3>(vp*projec*modelview*(embed<4>(model->vert(face[1][0]))));
-	  	Vec3f v2 = proj<3>(vp*projec*modelview*(embed<4>(model->vert(face[2][0]))));
-
-		if (strcmp(cmd,"film") == 0)
-			triangle_m(image,v0, v1, v2, TGAColor(255,255,255,255));
-		else {
+	  	std::vector<Vec3i> face = model->face(i);
+	  	
+		//With matrix	
+		if (strcmp(cmd,"film") == 0 || strcmp(cmd,"zm") == 0 || strcmp(cmd,"gouraudm") == 0 || strcmp(cmd,"text") == 0){		
+			Vec3f v0 = proj<3>(vp*projec*modelview*(embed<4>(model->vert(face[0][0]))));
+	  		Vec3f v1 = proj<3>(vp*projec*modelview*(embed<4>(model->vert(face[1][0]))));
+	  		Vec3f v2 = proj<3>(vp*projec*modelview*(embed<4>(model->vert(face[2][0]))));
 			
-			Vec3f normal = cross((v2-v0),(v1-v0));
-			normal.normalize();
-			if (normal*light > 0){
-				if (strcmp(cmd,"zm") == 0)
-					triangle_z(image,v0[0],v0[1],v0[2],v1[0],v1[1],v1[2],v2[0],v2[1],v2[2],TGAColor(normal*light*255,normal*light*255,normal*light*255,255), zbuffer);
-				else if (strcmp(cmd,"gouraudm") == 0) {
-					Vec3f vn0 = model->norm(face[0][2]).normalize();
-					Vec3f vn1 = model->norm(face[1][2]).normalize();
-					Vec3f vn2 = model->norm(face[2][2]).normalize();
-					triangle_d(image,v0[0],v0[1],v0[2],v1[0],v1[1],v1[2],v2[0],v2[1],v2[2],vn0*light,vn1*light,vn2*light, zbuffer);
-				}
-				else if (strcmp(cmd,"text") == 0){
-					Vec2f t0 = model->texture(face[0][1])*1024;
-	  				Vec2f t1 = model->texture(face[1][1])*1024;
-	  				Vec2f t2 = model->texture(face[2][1])*1024;				
-					triangle_t(image,v0[0],v0[1],v0[2],v1[0],v1[1],v1[2],v2[0],v2[1],v2[2],t0,t1,t2,zbuffer,texture,nm,spec);
-					  
-					
+			//Wire-frame
+			if (strcmp(cmd,"film") == 0)
+				triangle_m(image,v0, v1, v2, TGAColor(255,255,255,255));
+			else {			
+				Vec3f normal = cross((v2-v0),(v1-v0));
+				normal.normalize();
+				//Juste the good faces
+				if (normal*light > 0){
+					//Z-buffer
+					if (strcmp(cmd,"zm") == 0)
+						triangle_z(image,v0[0],v0[1],v0[2],v1[0],v1[1],v1[2],v2[0],v2[1],v2[2],TGAColor(normal*light*255,normal*light*255,normal*light*255,255), zbuffer);
+					//Gouraud shading
+					else if (strcmp(cmd,"gouraudm") == 0) {
+						Vec3f vn0 = model->norm(face[0][2]).normalize();
+						Vec3f vn1 = model->norm(face[1][2]).normalize();
+						Vec3f vn2 = model->norm(face[2][2]).normalize();
+						triangle_d(image,v0[0],v0[1],v0[2],v1[0],v1[1],v1[2],v2[0],v2[1],v2[2],vn0*light,vn1*light,vn2*light, zbuffer);
+					}
+					//Texture
+					else if (strcmp(cmd,"text") == 0){
+						Vec2f t0 = model->texture(face[0][1])*1024;
+	  					Vec2f t1 = model->texture(face[1][1])*1024;
+	  					Vec2f t2 = model->texture(face[2][1])*1024;				
+						triangle_t(image,v0[0],v0[1],v0[2],v1[0],v1[1],v1[2],v2[0],v2[1],v2[2],t0,t1,t2,zbuffer,texture,nm,spec);					
+					}
+				}	  
+			}	
+		}
+		//Without matrix
+		else {
+			//Get coordinates
+			Vec3f v0 = model->vert(face[0][0]);
+		  	Vec3f v1 = model->vert(face[1][0]);
+		  	Vec3f v2 = model->vert(face[2][0]);
+		  	int x0 = (v0.x+1)*(width/2);
+		  	int y0 = (v0.y+1)*(height/2);
+		  	int z0 = (v0.z+1)*(depth/2);
+		  	int x1 = (v1.x+1)*(width/2);
+		  	int y1 = (v1.y+1)*(height/2);
+		  	int z1 = (v1.z+1)*(depth/2);
+		  	int x2 = (v2.x+1)*(width/2);
+		  	int y2 = (v2.y+1)*(height/2);
+		  	int z2 = (v2.z+1)*(depth/2);
+
+			//Wire-frame
+			if (strcmp(cmd,"fil") == 0) {
+				triangle(image,x0,y0,x1,y1,x2,y2, TGAColor(255,255,255,255));
+			}
+			else if (strcmp(cmd,"z") == 0 || strcmp(cmd,"gouraud") == 0){
+				Vec3f normal = cross((v2-v0),(v1-v0));
+				normal.normalize();
+				//Just good faces
+				if (normal*light > 0){
+					//Z-buffer
+					if (strcmp(cmd,"z") == 0){
+						triangle_z(image,x0,y0,z0,x1,y1,z1,x2,y2,z2,TGAColor(normal*light*255,normal*light*255,normal*light*255,255), zbuffer);
+					}
+					//Gouraud shading
+					else if (strcmp(cmd,"gouraud") == 0){
+						Vec3f vn0 = model->norm(face[0][2]).normalize();
+						Vec3f vn1 = model->norm(face[1][2]).normalize();
+						Vec3f vn2 = model->norm(face[2][2]).normalize();
+						triangle_d(image,x0,y0,z0,x1,y1,z1,x2,y2,z2,vn0*light,vn1*light,vn2*light, zbuffer);
+					}
 				}
 			}
-
-		
-	  
-	  
 		}
-		
-	
-	}
 	}
 	
 	image.flip_vertically();
-	image.write_tga_file("tete.tga");
-	
-	
+	image.write_tga_file("image.tga");	
 	
 	return 0;
 }

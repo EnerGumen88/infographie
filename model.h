@@ -1,3 +1,8 @@
+/** \file model.h
+ * \brief Functions for model
+ * \author CARON Frédéric
+ */
+
 #ifndef __MODEL_H__
 #define __MODEL_H__
 

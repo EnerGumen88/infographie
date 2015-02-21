@@ -22,4 +22,8 @@ clean:
 	-rm -f $(TARGET)
 	-rm -f *.tga
 
+doc:
+	@doxygen -g
+	@doxygen
+
 
