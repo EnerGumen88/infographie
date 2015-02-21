@@ -371,9 +371,12 @@ void triangle_t (TGAImage &image,int x0, int y0, int z0, int x1, int y1, int z1,
 					zbuffer[j+(int)Ax+(y0+i)*1000] = z;
 					TGAColor color = texture.get(texture_point,t0[1]+i);
 					TGAColor color_nm = nm.get(texture_point,t0[1]+i+t10[1]);
+					TGAColor color_spec = spec.get(texture_point,t0[1]+i+t10[1]);
 					Vec3f vecolor_nm(color_nm.r/255.f*2.f-1.f,color_nm.g/255.f*2.f-1.f,color_nm.b/255.f*2.f-1.f);
+					Vec3f vecolor_spec(color_spec.r/255.f*2.f-1.f,color_spec.g/255.f*2.f-1.f,color_spec.b/255.f*2.f-1.f);
 					float diff = std::max(0.f,vecolor_nm*light);
-					TGAColor truecolor(color.r*diff,color.g*diff,color.b*diff,255);
+					float spe = std::max(0.f,vecolor_spec*light);
+					TGAColor truecolor(color.r*(0.5f*diff+1.f*spe),color.g*(0.5f*diff+1.f*spe),color.b*(0.5f*diff+1.f*spe),255);
 					image.set(j+Ax,y0+i, truecolor);
 				}
 			}
@@ -402,9 +405,12 @@ void triangle_t (TGAImage &image,int x0, int y0, int z0, int x1, int y1, int z1,
 					zbuffer[j+(int)Ax+(y0+i+height1)*1000] = z;
 					TGAColor color = texture.get(texture_point,t0[1]+i+t10[1]);
 					TGAColor color_nm = nm.get(texture_point,t0[1]+i+t10[1]);
+					TGAColor color_spec = spec.get(texture_point,t0[1]+i+t10[1]);
 					Vec3f vecolor_nm(color_nm.r/255.f*2.f-1.f,color_nm.g/255.f*2.f-1.f,color_nm.b/255.f*2.f-1.f);
+					Vec3f vecolor_spec(color_spec.r/255.f*2.f-1.f,color_spec.g/255.f*2.f-1.f,color_spec.b/255.f*2.f-1.f);
 					float diff = std::max(0.f,vecolor_nm*light);
-					TGAColor truecolor(color.r*diff,color.g*diff,color.b*diff,255);
+					float spe = std::max(0.f,vecolor_spec*light);
+					TGAColor truecolor(color.r*(0.5f*diff+1.f*spe),color.g*(0.5f*diff+1.f*spe),color.b*(0.5f*diff+1.f*spe),255);
 					image.set(j+Ax,y0+i+height1, truecolor);
 				}
 			}
