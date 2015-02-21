@@ -9,10 +9,14 @@
 int width = 1024;
 int height = 1024;
 int depth = 255;
-Vec3f light(0,0,-1);
+Vec3f light(0,0,1);
 Vec3f origine(0,0,0);
-Vec3f camera(0,0,1);
+Vec3f camera(0,0,-1);
 Vec3f u(0,1,0);
+
+Matrix vp;
+Matrix projec;
+Matrix modelview;
 
 
 
@@ -310,7 +314,7 @@ void triangle_m (TGAImage &image,Vec3f v0, Vec3f v1, Vec3f v2, TGAColor color){
 
 
 
-void triangle_t (TGAImage &image,int x0, int y0, int z0, int x1, int y1, int z1, int x2, int y2, int z2, Vec2f t0 , Vec2f t1, Vec2f t2, int *zbuffer, TGAImage &texture ) {
+void triangle_t (TGAImage &image,int x0, int y0, int z0, int x1, int y1, int z1, int x2, int y2, int z2, Vec2f t0 , Vec2f t1, Vec2f t2, int *zbuffer, TGAImage &texture, TGAImage &nm) {
   if (y0==y1 && y0==y2)
 		return;
 	if (y0>y1){
@@ -366,11 +370,11 @@ void triangle_t (TGAImage &image,int x0, int y0, int z0, int x1, int y1, int z1,
 					float texture_point = At + j*(Bt-At)/(Bx-Ax);
 					zbuffer[j+(int)Ax+(y0+i)*1000] = z;
 					TGAColor color = texture.get(texture_point,t0[1]+i);
-					//For nm					
-					//Vec3f vecolor(color.r,color.g,color.b);
-					//float diff = std::max(0.f,vecolor.normalize()*light.normalize());
-					//TGAColor truecolor(color.r*diff,color.g*diff,color.b*diff,255);
-					image.set(j+Ax,y0+i, color);
+					TGAColor color_nm = nm.get(texture_point,t0[1]+i+t10[1]);
+					Vec3f vecolor_nm(color_nm.r/255.f*2.f-1.f,color_nm.g/255.f*2.f-1.f,color_nm.b/255.f*2.f-1.f);
+					float diff = std::max(0.f,vecolor_nm*light);
+					TGAColor truecolor(color.r*diff,color.g*diff,color.b*diff,255);
+					image.set(j+Ax,y0+i, truecolor);
 				}
 			}
 		}
@@ -397,11 +401,11 @@ void triangle_t (TGAImage &image,int x0, int y0, int z0, int x1, int y1, int z1,
 					float texture_point = At + j*(Bt-At)/(Bx-Ax);
 					zbuffer[j+(int)Ax+(y0+i+height1)*1000] = z;
 					TGAColor color = texture.get(texture_point,t0[1]+i+t10[1]);
-					//For nm
-					//Vec3f vecolor(color.r,color.g,color.b);
-					//float diff = std::max(0.f,vecolor.normalize()*light.normalize());
-					//TGAColor truecolor(color.r*diff,color.g*diff,color.b*diff,255);
-					image.set(j+Ax,y0+i+height1, color);
+					TGAColor color_nm = nm.get(texture_point,t0[1]+i+t10[1]);
+					Vec3f vecolor_nm(color_nm.r/255.f*2.f-1.f,color_nm.g/255.f*2.f-1.f,color_nm.b/255.f*2.f-1.f);
+					float diff = std::max(0.f,vecolor_nm*light);
+					TGAColor truecolor(color.r*diff,color.g*diff,color.b*diff,255);
+					image.set(j+Ax,y0+i+height1, truecolor);
 				}
 			}
 		}
@@ -429,6 +433,9 @@ int main(int argc, char** argv) {
 	TGAImage texture;
 	texture.read_tga_file("./obj/diablo3_pose_diffuse.tga");
 	texture.flip_vertically();
+	TGAImage nm;
+	nm.read_tga_file("./obj/diablo3_pose_nm.tga");
+	nm.flip_vertically();
 	
 	
 	int *zbuffer = new int [width*height];
@@ -436,12 +443,12 @@ int main(int argc, char** argv) {
 		zbuffer[i] = std::numeric_limits<int>::min();
 	}
 	
-	Matrix transfo = Matrix::identity();
-	Matrix vp = viewport(width, height, depth);
-	Matrix projec = projection(1/(camera-origine).norm());
-	Matrix modelview = lookat(origine,camera,u);
-	light = proj<3>(projec*modelview*embed<4>(light,0.f));
-	transfo = vp*projec*modelview;
+	
+	vp = viewport(width, height, depth);
+	projec = projection(1.f/(camera-origine).norm());
+	modelview = lookat(origine,camera,u);
+	light = proj<3>(projec*modelview*embed<4>(light,0.f)).normalize();
+	
 	
 	  
 	for (int i=0;i<model->nfaces();i++){
@@ -479,9 +486,9 @@ int main(int argc, char** argv) {
 	}
 	else if (strcmp(cmd,"film") == 0 || strcmp(cmd,"zm") == 0 || strcmp(cmd,"gouraudm") == 0 || strcmp(cmd,"text") == 0){
 		
-		Vec3f v0 = proj<3>(transfo*(embed<4>(model->vert(face[0][0]))));
-	  	Vec3f v1 = proj<3>(transfo*(embed<4>(model->vert(face[1][0]))));
-	  	Vec3f v2 = proj<3>(transfo*(embed<4>(model->vert(face[2][0]))));
+		Vec3f v0 = proj<3>(vp*projec*modelview*(embed<4>(model->vert(face[0][0]))));
+	  	Vec3f v1 = proj<3>(vp*projec*modelview*(embed<4>(model->vert(face[1][0]))));
+	  	Vec3f v2 = proj<3>(vp*projec*modelview*(embed<4>(model->vert(face[2][0]))));
 
 		if (strcmp(cmd,"film") == 0)
 			triangle_m(image,v0, v1, v2, TGAColor(255,255,255,255));
@@ -502,7 +509,7 @@ int main(int argc, char** argv) {
 					Vec2f t0 = model->texture(face[0][1])*1024;
 	  				Vec2f t1 = model->texture(face[1][1])*1024;
 	  				Vec2f t2 = model->texture(face[2][1])*1024;				
-					triangle_t(image,v0[0],v0[1],v0[2],v1[0],v1[1],v1[2],v2[0],v2[1],v2[2],t0,t1,t2,zbuffer,texture);
+					triangle_t(image,v0[0],v0[1],v0[2],v1[0],v1[1],v1[2],v2[0],v2[1],v2[2],t0,t1,t2,zbuffer,texture,nm);
 					  
 					
 				}
