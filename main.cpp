@@ -11,6 +11,8 @@
 #include <stdio.h>
 #include <string>
 
+//test
+
 int width = 1024;
 int height = 1024;
 int depth = 255;
@@ -513,15 +515,15 @@ int main(int argc, char** argv) {
 
 	//Initilization of images and model
 	TGAImage image (width,height,3);
-	Model *model = new Model("./obj/diablo.obj");
+	Model *model = new Model("./obj/african_head.obj");
 	TGAImage texture;
-	texture.read_tga_file("./obj/diablo3_pose_diffuse.tga");
+	texture.read_tga_file("./obj/african_head_diffuse.tga");
 	texture.flip_vertically();
 	TGAImage nm;
-	nm.read_tga_file("./obj/diablo3_pose_nm.tga");
+	nm.read_tga_file("./obj/african_head_nm.tga");
 	nm.flip_vertically();
 	TGAImage spec;
-	nm.read_tga_file("./obj/diablo3_pose_spec.tga");
+	nm.read_tga_file("./obj/african_head_spec.tga");
 	nm.flip_vertically();
 	
 	//Initialisation of zbuffer
