@@ -3,8 +3,8 @@
  * \author Master SOKOLOV
  */
 
-#ifndef __GEOMETRIE_H__
-#define __GEOMETRIE_H__
+#ifndef __GEOMETRY_H__
+#define __GEOMETRY_H__
 #include <cmath>
 #include <vector>
 #include <cassert>
@@ -143,6 +143,14 @@ mat<DimRows,DimCols,T> ret = adjugate();
 T tmp = ret[0]*rows[0];
 return ret/tmp;
 }
+mat<DimRows,DimCols,T> invert() {
+return invert_transpose().transpose();
+}
+mat<DimCols,DimRows,T> transpose() {
+mat<DimCols,DimRows,T> ret;
+for (size_t i=DimCols; i--; ret[i]=this->col(i));
+return ret;
+}
 };
 /////////////////////////////////////////////////////////////////////////////////
 template<size_t DimRows,size_t DimCols,typename T> vec<DimRows,T> operator*(const mat<DimRows,DimCols,T>& lhs, const vec<DimCols,T>& rhs) {
@@ -171,4 +179,4 @@ typedef vec<3, float> Vec3f;
 typedef vec<3, int> Vec3i;
 typedef vec<4, float> Vec4f;
 typedef mat<4,4,float> Matrix;
-#endif //__GEOMETRIE_H__
+#endif //__GEOMETRY_H__
