@@ -196,21 +196,24 @@ int main(int argc, char** argv) {
 	TGAImage spec;
 	nm.read_tga_file("./obj/african_head_spec.tga");
 	nm.flip_vertically();
+
 	//Initialisation of zbuffer
 	int *zbuffer = new int [width*height];
 	for (int i=0; i<width*height; i++){
 		zbuffer[i] = std::numeric_limits<int>::min();
 	}
+
 	//Initialization of matrix
 	vp = viewport(width, height, depth);
 	projec = projection(1.f/(camera-origine).norm());
 	modelview = lookat(origine,camera,u);
 	light = proj<3>(projec*modelview*embed<4>(light,0.f)).normalize();
+
 	//Let's go
 	for (int i=0;i<model->nfaces();i++){
 		std::vector<Vec3i> face = model->face(i);
-		//With matrix
-
+		
+		//Get Coords
 		Vec3f v0 = proj<3>(vp*projec*modelview*(embed<4>(model->vert(face[0][0]))));
 		Vec3f v1 = proj<3>(vp*projec*modelview*(embed<4>(model->vert(face[1][0]))));
 		Vec3f v2 = proj<3>(vp*projec*modelview*(embed<4>(model->vert(face[2][0]))));
