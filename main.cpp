@@ -23,6 +23,10 @@ Matrix vp;
 Matrix projec;
 Matrix modelview;
 
+float coeff_diff = 1.5;
+float coeff_spec = 1.3;
+float add_spec = 20.;
+
 
 
 /** \fn Matrix viewport (int width, int height, int depth)
@@ -92,6 +96,8 @@ Matrix lookat (Vec3f o, Vec3f camera, Vec3f u){
 * \return void
 */
 void triangle_t (TGAImage &image,int x0, int y0, int z0, int x1, int y1, int z1, int x2, int y2, int z2, Vec2f t0 , Vec2f t1, Vec2f t2, int *zbuffer, TGAImage &texture, TGAImage &nm, TGAImage &spec) {
+	
+
 	if (y0==y1 && y0==y2) return;
 	if (y0>y1){
 		std::swap(x0,x1);
@@ -114,19 +120,15 @@ void triangle_t (TGAImage &image,int x0, int y0, int z0, int x1, int y1, int z1,
 	int height = y2 - y0;
 	int height1 = y1 - y0;
 	int height2 = y2 - y1;
-	Vec2f t20 = t2 - t0;
-	Vec2f t21 = t2 - t1;
-	Vec2f t10 = t1 - t0;
+	
 	if (height1 != 0){
 		for (int i=0; i<height1; i++){
 			float Ax = x0 + i*(x2-x0)/height;
 			float Az = z0 + i*(z2-z0)/height;
-//			float At = t0[0] + i*(t20[0])/height;
 			Vec2f At = t0 + (t2-t0)*(i/(float)height);
 			float Bx = x0 + i*(x1-x0)/height1;
 			float Bz = z0 + i*(z1-z0)/height1;
 			Vec2f Bt = t0 + (t1-t0)*(i/(float)height1);
-//			float Bt = t0[0] + i*(t10[0])/height1;
 			if (Ax > Bx){
 				std::swap(Ax,Bx);
 				std::swap(Az,Bz);
@@ -135,21 +137,19 @@ void triangle_t (TGAImage &image,int x0, int y0, int z0, int x1, int y1, int z1,
 			for (int j=0; j<=Bx-Ax; j++){
 				float z = Az + j*(Bz-Az)/(Bx-Ax);
 				if (zbuffer[j+(int)Ax+(y0+i)*1000] < z){
-//					float texture_point = At + j*(Bt-At)/(Bx-Ax);
 					Vec2f Ct = At + (Bt-At)*(j/(float)(Bx-Ax));
-
 					zbuffer[j+(int)Ax+(y0+i)*1000] = z;
 					TGAColor color = texture.get(Ct.x,Ct.y);
 					TGAColor color_nm = nm.get(Ct.x,Ct.y);
 					TGAColor color_spec = spec.get(Ct.x,Ct.y);
-//					TGAColor color = texture.get(texture_point,t0[1]+i);
-//					TGAColor color_nm = nm.get(texture_point,t0[1]+i+t10[1]);
-//					TGAColor color_spec = spec.get(texture_point,t0[1]+i+t10[1]);
 					Vec3f vecolor_nm(color_nm.r/255.f*2.f-1.f,color_nm.g/255.f*2.f-1.f,color_nm.b/255.f*2.f-1.f);
-					Vec3f vecolor_spec(color_spec.r/255.f*2.f-1.f,color_spec.g/255.f*2.f-1.f,color_spec.b/255.f*2.f-1.f);
+					Vec3f n = vecolor_nm.normalize();
+					Vec3f l = light.normalize();
+					Vec3f r = ((n*2.*(n*l))-l).normalize() ;
+					float s = std::max(0.f,r*camera.normalize()) ;
+					float spe = std::sqrt(color_spec.r*color_spec.r+color_spec.g*color_spec.g+color_spec.b*color_spec.b) ;
 					float diff = std::max(0.f,vecolor_nm*light);
-					float spe = std::max(0.f,vecolor_spec*light);
-					TGAColor truecolor(color.r*(0.5f*diff+1.2f*spe),color.g*(0.5f*diff+1.2f*spe),color.b*(0.5f*diff+1.2f*spe),255);
+					TGAColor truecolor(color.r*(coeff_diff*diff+coeff_spec*std::pow(s,spe+add_spec)),color.g*(coeff_diff*diff+coeff_spec*std::pow(s,spe+add_spec)),color.b*(coeff_diff*diff+coeff_spec*std::pow(s,spe+add_spec)),255);
 					image.set(j+Ax,y0+i, truecolor);
 				}
 			}
@@ -160,11 +160,9 @@ void triangle_t (TGAImage &image,int x0, int y0, int z0, int x1, int y1, int z1,
 			float Ax = x0 + (i+height1)*(x2-x0)/height;
 			float Az = z0 + (i+height1)*(z2-z0)/height;
 			Vec2f At = t0 + (t2-t0)*((i+height1)/(float)height);
-//			float At = t0[0] + (i+height1)*(t20[0])/height;
 			Vec2f Bt = t1 + (t2-t1)*(i/(float)height2);
 			float Bx = x1 + i*(x2-x1)/height2;
 			float Bz = z1 + i*(z2-z1)/height2;
-//			float Bt = t1[0] + i*(t21[0])/height2;
 			if (Ax > Bx){
 				std::swap(Ax,Bx);
 				std::swap(Az,Bz);
@@ -174,19 +172,18 @@ void triangle_t (TGAImage &image,int x0, int y0, int z0, int x1, int y1, int z1,
 			    Vec2f Ct = At + (Bt-At)*(j/(float)(Bx-Ax));
 				float z = Az + j*(Bz-Az)/(Bx-Ax);
 				if (zbuffer[j+(int)Ax+(y0+i+height1)*1000] < z){
-//					float texture_point = At + j*(Bt-At)/(Bx-Ax);
 					zbuffer[j+(int)Ax+(y0+i+height1)*1000] = z;
 					TGAColor color = texture.get(Ct.x,Ct.y);
 					TGAColor color_nm = nm.get(Ct.x,Ct.y);
 					TGAColor color_spec = spec.get(Ct.x,Ct.y);
-//					TGAColor color = texture.get(texture_point,t0[1]+i+t10[1]);
-//					TGAColor color_nm = nm.get(texture_point,t0[1]+i+t10[1]);
-//					TGAColor color_spec = spec.get(texture_point,t0[1]+i+t10[1]);
 					Vec3f vecolor_nm(color_nm.r/255.f*2.f-1.f,color_nm.g/255.f*2.f-1.f,color_nm.b/255.f*2.f-1.f);
-					Vec3f vecolor_spec(color_spec.r/255.f*2.f-1.f,color_spec.g/255.f*2.f-1.f,color_spec.b/255.f*2.f-1.f);
+					Vec3f n = vecolor_nm.normalize();
+					Vec3f l = light.normalize();
+					Vec3f r = ((n*2.*(n*l))-l).normalize() ;
+					float s = std::max(0.f,r*camera.normalize()) ;
+					float spe = std::sqrt(color_spec.r*color_spec.r+color_spec.g*color_spec.g+color_spec.b*color_spec.b) ;
 					float diff = std::max(0.f,vecolor_nm*light);
-					float spe = std::max(0.f,vecolor_spec*light);
-					TGAColor truecolor(color.r*(0.5f*diff+1.2f*spe),color.g*(0.5f*diff+1.2f*spe),color.b*(0.5f*diff+1.2f*spe),255);
+					TGAColor truecolor(color.r*(coeff_diff*diff+coeff_spec*std::pow(s,spe+add_spec)),color.g*(coeff_diff*diff+coeff_spec*std::pow(s,spe+add_spec)),color.b*(coeff_diff*diff+coeff_spec*std::pow(s,spe+add_spec)),255);
 					image.set(j+Ax,y0+i+height1, truecolor);
 				}
 			}
@@ -199,15 +196,15 @@ int main(int argc, char** argv) {
 
 	//Initilization of images and model
 	TGAImage image (width,height,3);
-	Model *model = new Model("./obj/african_head.obj");
+	Model *model = new Model("./obj/diablo.obj");
 	TGAImage texture;
-	texture.read_tga_file("./obj/african_head_diffuse.tga");
+	texture.read_tga_file("./obj/diablo3_pose_diffuse.tga");
 	texture.flip_vertically();
 	TGAImage nm;
-	nm.read_tga_file("./obj/african_head_nm.tga");
+	nm.read_tga_file("./obj/diablo3_pose_nm.tga");
 	nm.flip_vertically();
 	TGAImage spec;
-	nm.read_tga_file("./obj/african_head_spec.tga");
+	nm.read_tga_file("./obj/diablo3_pose_spec.tga");
 	nm.flip_vertically();
 
 	//Initialisation of zbuffer
